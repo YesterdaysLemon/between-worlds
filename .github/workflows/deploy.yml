@@ -19,10 +19,10 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 35
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7.0.1
         with:
           persist-credentials: false
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7.0.0
         with:
           node-version: "22"
           cache: npm
@@ -45,14 +45,14 @@ jobs:
         env:
           DEPLOY_WEBHOOK_SECRET: ${{ secrets.DEPLOY_WEBHOOK_SECRET }}
           DEPLOY_WEBHOOK_URL: ${{ secrets.DEPLOY_WEBHOOK_URL }}
-          GITHUB_EVENT_NAME: push
-          GITHUB_REF_NAME: ${{ github.ref_name }}
-          GITHUB_REPOSITORY: ${{ github.repository }}
-          GITHUB_SHA: ${{ github.sha }}
+          DEPLOY_EVENT: push
+          DEPLOY_BRANCH: ${{ github.ref_name }}
+          DEPLOY_REPOSITORY: ${{ github.repository }}
+          DEPLOY_SHA: ${{ github.sha }}
         run: |
           test -n "$DEPLOY_WEBHOOK_URL"
           test -n "$DEPLOY_WEBHOOK_SECRET"
-          payload="$(node -e 'const p={event:process.env.GITHUB_EVENT_NAME,branch:process.env.GITHUB_REF_NAME,repo:process.env.GITHUB_REPOSITORY,sha:process.env.GITHUB_SHA};process.stdout.write(JSON.stringify(p))')"
+          payload="$(node -e 'const p={event:process.env.DEPLOY_EVENT,branch:process.env.DEPLOY_BRANCH,repo:process.env.DEPLOY_REPOSITORY,sha:process.env.DEPLOY_SHA};process.stdout.write(JSON.stringify(p))')"
           signature="$(node -e 'const c=require("crypto");process.stdout.write("sha256="+c.createHmac("sha256",process.env.DEPLOY_WEBHOOK_SECRET).update(process.argv[1]).digest("hex"))' "$payload")"
           response="$(curl --fail-with-body --silent --show-error \
             --request POST "$DEPLOY_WEBHOOK_URL" \
@@ -60,7 +60,7 @@ jobs:
             --header "X-GitHub-Event: push" \
             --header "X-Hub-Signature-256: $signature" \
             --data "$payload")"
-          job_id="$(node -e 'const response=JSON.parse(process.argv[1]);if(!response?.job?.id||!response?.receipt)process.exit(1);process.stdout.write(response.job.id)' "$response")"
+          job_id="$(node -e 'const response=JSON.parse(process.argv[1]);if(!response?.job?.id||!response?.receipt){console.error("Deploy Manager returned no receipt:",JSON.stringify({ok:response.ok,skipped:response.skipped,reason:response.reason,error:response.error}));process.exit(1)}process.stdout.write(response.job.id)' "$response")"
           receipt="$(node -e 'const response=JSON.parse(process.argv[1]);process.stdout.write(response.receipt)' "$response")"
           receipt_url="$(node -e 'const webhook=new URL(process.argv[1]);process.stdout.write(new URL(process.argv[2],webhook.origin).toString())' "$DEPLOY_WEBHOOK_URL" "$receipt")"
           echo "Deploy Manager accepted job $job_id"
