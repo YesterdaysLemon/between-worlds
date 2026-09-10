@@ -1,0 +1,21 @@
+{
+  "scope": "Local Edge browser, finite toy model; desktop and narrow responsive checks.",
+  "viewportDesktop": [1440, 1080],
+  "viewportMobile": [390, 844],
+  "cascadeAtTau4": { "fractionA": 0.8326474622770653, "fractionB": 0, "fieldSites": [5832, 20736], "live": 48, "created": 48 },
+  "closedHorizonAtTau5": { "captured": 24, "crossings": 0, "live": 24, "created": 48 },
+  "openedHorizonWithAdditionalPacketsAtTau10": { "captured": 44, "crossings": 50, "sourcePacketsInNeighbour": 16, "live": 36, "created": 80 },
+  "mobile": { "documentWidth": 390, "scrollWidth": 390, "torusDimension": 2, "modelDialogVisible": true, "errorBannerHidden": true },
+  "controls": {
+    "bothVolumeHoleRadii": [0.9, 0.9],
+    "torusGuardsUnsupportedBlackHole": true,
+    "probe": { "fromSpatialDimension": 4, "toSpatialDimension": 3, "restMassBefore": 1, "restMassAfter": 1.8027756501443408 },
+    "projectionRotationDegrees": 90,
+    "fieldAndTrailToggles": "exercised",
+    "stateExport": "downloaded and saved",
+    "minimumViewport": { "width": 320, "scrollWidth": 320 },
+    "reducedMotion": { "initialTime": 0, "initialState": "paused", "deepLinkedPreset": "A dimensional cascade" }
+  },
+  "consoleErrors": 0,
+  "screenshotDirectory": "output/playwright/"
+}

@@ -1,0 +1,26 @@
+# Managed by al-stack. Keep extended prose in AGENTS.md.
+"schema" = 1
+
+["project"]
+"id" = "8e19b696-547a-49f3-9f90-e39f12159cd0"
+"name" = "Between worlds"
+"status" = "experimental"
+"profile" = "research"
+"purpose" = "Explore mixed-dimensional spaces, reciprocal fields, prescribed geometry and matter/light at contacts."
+
+["stack"]
+"version" = "0.1.0"
+"revision" = "11eac15f6a8a0dc76f06ef97c7c3a27c7f668e0a"
+
+["commands"]
+"dev" = "npm run dev"
+"build" = "npm run build"
+"test" = "npm test"
+"experiments" = "npm run experiments"
+"check" = "npm run check"
+"smoke" = "npm run smoke -- <base-url> <expected-sha>"
+
+[["tools"]]
+"name" = "node"
+"kind" = "cli"
+"command" = "node"

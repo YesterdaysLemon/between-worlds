@@ -1,0 +1,77 @@
+name: Validate and deploy Between Worlds
+
+on:
+  push:
+    branches:
+      - "main"
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: between-worlds-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  validate-and-notify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+      - run: npm ci
+      - name: Validate application
+        run: |
+          npm run check
+      - name: Verify the production image
+        run: |
+          docker build -t between-worlds:check .
+          docker run -d --name between-worlds-check -p 127.0.0.1:8080:8080 between-worlds:check
+          trap 'docker logs between-worlds-check; docker rm -f between-worlds-check' EXIT
+          for attempt in $(seq 1 30); do
+            if curl --fail --silent http://127.0.0.1:8080/healthz >/dev/null; then break; fi
+            sleep 1
+          done
+          node scripts/smoke.mjs http://127.0.0.1:8080 "$GITHUB_SHA"
+      - name: Notify Deploy Manager
+        if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request' && vars.DEPLOY_ENABLED == 'true'
+        env:
+          DEPLOY_WEBHOOK_SECRET: ${{ secrets.DEPLOY_WEBHOOK_SECRET }}
+          DEPLOY_WEBHOOK_URL: ${{ secrets.DEPLOY_WEBHOOK_URL }}
+          GITHUB_EVENT_NAME: push
+          GITHUB_REF_NAME: ${{ github.ref_name }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          GITHUB_SHA: ${{ github.sha }}
+        run: |
+          test -n "$DEPLOY_WEBHOOK_URL"
+          test -n "$DEPLOY_WEBHOOK_SECRET"
+          payload="$(node -e 'const p={event:process.env.GITHUB_EVENT_NAME,branch:process.env.GITHUB_REF_NAME,repo:process.env.GITHUB_REPOSITORY,sha:process.env.GITHUB_SHA};process.stdout.write(JSON.stringify(p))')"
+          signature="$(node -e 'const c=require("crypto");process.stdout.write("sha256="+c.createHmac("sha256",process.env.DEPLOY_WEBHOOK_SECRET).update(process.argv[1]).digest("hex"))' "$payload")"
+          response="$(curl --fail-with-body --silent --show-error \
+            --request POST "$DEPLOY_WEBHOOK_URL" \
+            --header "Content-Type: application/json" \
+            --header "X-GitHub-Event: push" \
+            --header "X-Hub-Signature-256: $signature" \
+            --data "$payload")"
+          job_id="$(node -e 'const response=JSON.parse(process.argv[1]);if(!response?.job?.id||!response?.receipt)process.exit(1);process.stdout.write(response.job.id)' "$response")"
+          receipt="$(node -e 'const response=JSON.parse(process.argv[1]);process.stdout.write(response.receipt)' "$response")"
+          receipt_url="$(node -e 'const webhook=new URL(process.argv[1]);process.stdout.write(new URL(process.argv[2],webhook.origin).toString())' "$DEPLOY_WEBHOOK_URL" "$receipt")"
+          echo "Deploy Manager accepted job $job_id"
+          for attempt in $(seq 1 600); do
+            job="$(curl --fail-with-body --silent --show-error "$receipt_url")"
+            status="$(node -e 'const response=JSON.parse(process.argv[1]);process.stdout.write(response?.job?.status??"unknown")' "$job")"
+            case "$status" in
+              succeeded) echo "Deploy Manager job $job_id succeeded"; exit 0 ;;
+              failed|rolled-back|interrupted) echo "Deploy Manager job $job_id ended with $status" >&2; exit 1 ;;
+            esac
+            sleep 2
+          done
+          echo "Deploy Manager job $job_id did not finish within 20 minutes" >&2
+          exit 1

@@ -1,0 +1,21 @@
+{
+  "name": "between-worlds",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite --host 127.0.0.1",
+    "build": "vite build && node scripts/write-build-info.mjs",
+    "preview": "vite preview --host 127.0.0.1",
+    "test": "node --test tests/*.test.mjs",
+    "experiments": "node scripts/experiments.mjs",
+    "check": "npm test && npm run build",
+    "smoke": "node scripts/smoke.mjs"
+  },
+  "description": "An interactive geometry laboratory for fields, matter and contact between dimensions.",
+  "repository": { "type": "git", "url": "https://github.com/YesterdaysLemon/between-worlds.git" },
+  "homepage": "https://between-worlds.alirezaafshan.com/",
+  "engines": { "node": ">=22.12.0" },
+  "dependencies": { "three": "0.186.0" },
+  "devDependencies": { "vite": "8.2.2" }
+}

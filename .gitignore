@@ -1,0 +1,10 @@
+node_modules/
+dist/
+.playwright-cli/
+output/playwright/
+*.log
+output/deployment/
+output/publishing-workflow-scratchpad.md
+*.secret
+.env
+.env.*

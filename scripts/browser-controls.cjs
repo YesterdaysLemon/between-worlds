@@ -1,0 +1,34 @@
+async page => {
+  const report = {};
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.getByLabel('Neighbouring world', { exact: false }).scrollIntoViewIfNeeded();
+  await page.screenshot({ path: 'output/playwright/controls-mobile.png' });
+  await page.getByText('Geometry, horizons & contact rules', { exact: false }).click();
+  await page.getByLabel('Black-hole background').selectOption('both');
+  await page.waitForFunction(() => window.__labState.worlds.every(w => w.horizon > 0));
+  report.holesBoth = await page.evaluate(() => __labState.worlds.map(w => w.horizon));
+  await page.getByLabel('Neighbouring world', { exact: false }).selectOption('torus');
+  await page.waitForFunction(() => window.__labState.worlds[1].dim === 2);
+  report.torusHoleGuard = await page.evaluate(() => ({ option: document.getElementById('holes').value, holes: __labState.worlds.map(w => w.horizon), bDisabled: document.querySelector('#holes option[value=b]').disabled }));
+  await page.getByLabel('Choose experiment').selectOption('contact');
+  await page.waitForFunction(() => window.__labState.time === 0 && window.__labState.options.geometryB === '4d');
+  if (await page.getByRole('button', { name: 'Pause simulation', exact: true }).count()) await page.getByRole('button', { name: 'Pause simulation', exact: true }).click();
+  await page.waitForFunction(() => document.getElementById('run-state').textContent.includes('Paused'));
+  await page.getByRole('button', { name: 'Send a 4D probe', exact: false }).click();
+  for (let i = 0; i < 8; i++) await page.getByRole('button', { name: 'Advance one simulation step', exact: true }).click();
+  await page.waitForFunction(() => window.__labState.lastTransfer?.probe === true);
+  report.probe = await page.evaluate(() => __labState.lastTransfer);
+  await page.getByLabel('Rotate through w', { exact: false }).focus(); await page.keyboard.press('End');
+  report.rotation = await page.getByLabel('Rotate through w', { exact: false }).inputValue();
+  await page.getByRole('checkbox', { name: 'Field', exact: true }).uncheck();
+  await page.getByRole('checkbox', { name: 'Trails', exact: true }).uncheck();
+  const [download] = await Promise.all([page.waitForEvent('download'), page.getByRole('button', { name: 'Save state', exact: false }).click()]);
+  await download.saveAs('output/playwright/saved-state.json'); report.download = download.suggestedFilename();
+  await page.setViewportSize({ width: 320, height: 740 });
+  report.narrow = await page.evaluate(() => ({ width: innerWidth, scrollWidth: document.documentElement.scrollWidth, error: document.getElementById('error').textContent }));
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await page.goto('http://127.0.0.1:52915/?experiment=cascade');
+  await page.waitForFunction(() => window.__labState && document.getElementById('run-state').textContent.includes('Paused'));
+  report.reducedMotion = await page.evaluate(() => ({ time: __labState.time, title: document.getElementById('experiment-title').textContent }));
+  return report;
+}

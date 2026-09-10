@@ -1,0 +1,178 @@
+{
+  "date": "2026-09-10T05:04:58.007Z",
+  "scope": "Finite-grid classical toy. No Einstein backreaction or quantum tunnelling.",
+  "experiments": [
+    {
+      "name": "degenerate vacua",
+      "bias": 0,
+      "time": 8.999999999999963,
+      "initial": {
+        "fraction": 0.04861111111111111,
+        "min": 7.216449660063518e-14,
+        "max": 0.9972157607086289,
+        "dimensions": 2,
+        "nodes": 2304
+      },
+      "final": {
+        "fraction": 0,
+        "min": -0.07703734621425078,
+        "max": 0.08390408133970317,
+        "dimensions": 2,
+        "nodes": 2304
+      }
+    },
+    {
+      "name": "favoured converted phase",
+      "bias": 0.32,
+      "time": 8.999999999999963,
+      "initial": {
+        "fraction": 0.04861111111111111,
+        "min": 7.216449660063518e-14,
+        "max": 0.9972157607086289,
+        "dimensions": 2,
+        "nodes": 2304
+      },
+      "final": {
+        "fraction": 0.96875,
+        "min": 0.34799376940780313,
+        "max": 1.9358574813654623,
+        "dimensions": 2,
+        "nodes": 2304
+      }
+    },
+    {
+      "name": "contact with 4d",
+      "time": 4.000000000000003,
+      "millisecondsPerStep": 1.41615,
+      "worlds": [
+        {
+          "id": 0,
+          "n": 18,
+          "dim": 3,
+          "length": 8,
+          "geometry": "flat",
+          "horizon": 0,
+          "gate": 2,
+          "holeCenter": [
+            1.55,
+            0,
+            0,
+            0
+          ],
+          "fraction": 0.004629629629629013,
+          "min": -0.003584344789110587,
+          "max": 0.7009512524668967,
+          "dimensions": 3,
+          "nodes": 5832
+        },
+        {
+          "id": 1,
+          "n": 12,
+          "dim": 4,
+          "length": 8,
+          "geometry": "flat",
+          "horizon": 0,
+          "gate": -2,
+          "holeCenter": [
+            -1.55,
+            0,
+            0,
+            0
+          ],
+          "fraction": 0,
+          "min": -0.13249705947855378,
+          "max": 0.04150857241524589,
+          "dimensions": 4,
+          "nodes": 20736
+        }
+      ],
+      "transfers": 39,
+      "live": 40,
+      "absorbed": 0,
+      "total": 40
+    },
+    {
+      "name": "contact with torus",
+      "time": 4.000000000000003,
+      "millisecondsPerStep": 0.3966380000000004,
+      "worlds": [
+        {
+          "id": 0,
+          "n": 18,
+          "dim": 3,
+          "length": 8,
+          "geometry": "flat",
+          "horizon": 0,
+          "gate": 2,
+          "holeCenter": [
+            1.55,
+            0,
+            0,
+            0
+          ],
+          "fraction": 0.06310013717420326,
+          "min": 0.00001963171049998572,
+          "max": 0.7803829283894037,
+          "dimensions": 3,
+          "nodes": 5832
+        },
+        {
+          "id": 1,
+          "n": 36,
+          "dim": 2,
+          "length": 8,
+          "geometry": "torus",
+          "horizon": 0,
+          "gate": -2,
+          "holeCenter": [
+            -1.55,
+            0,
+            0,
+            0
+          ],
+          "fraction": 0,
+          "min": 2.4413181686251256e-9,
+          "max": 0.3489367305148764,
+          "dimensions": 2,
+          "nodes": 1296
+        }
+      ],
+      "transfers": 33,
+      "live": 40,
+      "absorbed": 0,
+      "total": 40
+    },
+    {
+      "name": "horizon contact closed",
+      "time": 4.999999999999981,
+      "sourceCaptured": 12,
+      "sourceInNeighbour": 0
+    },
+    {
+      "name": "horizon contact open",
+      "time": 4.999999999999981,
+      "sourceCaptured": 0,
+      "sourceInNeighbour": 12
+    },
+    {
+      "name": "cascade at tau 16",
+      "time": 15.999999999999748,
+      "worlds": [
+        {
+          "fraction": 0.9958847736625509,
+          "min": 0.468891258209445,
+          "max": 1.5715418770367757,
+          "dimensions": 3,
+          "nodes": 5832
+        },
+        {
+          "fraction": 0.8794849537036477,
+          "min": -0.10554844523119697,
+          "max": 1.42239904923246,
+          "dimensions": 4,
+          "nodes": 20736
+        }
+      ]
+    }
+  ]
+}
