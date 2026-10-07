@@ -2,6 +2,7 @@ node_modules/
 dist/
 .playwright-cli/
 output/playwright/
+output/checks/
 *.log
 output/deployment/
 output/publishing-workflow-scratchpad.md

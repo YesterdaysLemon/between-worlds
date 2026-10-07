@@ -15,6 +15,9 @@ Project commands:
 - check: `npm run check`
 - smoke: `npm run smoke -- <base-url> <expected-sha>`
 
+Project skills (load when relevant):
+- `rich-embed`: `.agents/skills/rich-embed/SKILL.md`. Claude's copy is mirrored in `.claude/skills`.
+
 Declared tools (verify availability in the intended agent):
 - node (cli): `node`.
 
@@ -31,4 +34,5 @@ This is an experimental local mathematical simulator, not a physical theory. Rea
 - Black holes are fixed Schwarzschild/Tangherlini backgrounds only when the matter spatial metric is undeformed. Plotted radii are reference markers. Do not call them global horizons of the coupled system.
 - Run `npm test` and `npm run build` for equation or implementation changes. `npm run experiments` records bounded finite-grid outcomes. Add spatial or timestep checks when a new scientific claim needs them.
 - Use the user-level `frontend-quality` skill for UI changes and `playwright` for browser checks. Keep the canvas central and detailed model notes available without filling the controls with implementation prose.
+- `/embed` reuses the same renderer and worker with compact controls. Use `rich-embed` for card changes. Keep worker evolution and WebGL rendering suspended outside view without overriding the user's pause state. Camera fitting may change for the frame; the model equations must not. Check 480px and 320px square frames, touch, reduced motion, and the full laboratory. Player Card metadata is experimental until playback is verified in the intended X client.
 - Releases use the public `YesterdaysLemon/between-worlds` repository on `main` and the existing Deploy Manager at `between-worlds.alirezaafshan.com`. See `deployment/README.md`. Keep local checks, signed receipt completion, and live evidence distinct; publishing authority still comes from the current request.

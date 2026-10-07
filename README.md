@@ -23,4 +23,6 @@ The full equations, boundary conditions, discrete energy and limitations are in 
 
 Three.js renders coordinate illustrations. A worker solves the intrinsic fields and traces the test particles. Rendering does not determine the underlying dimension. All runtime dependencies are local after installation; the optional display fonts fall back to system fonts.
 
+`/embed` is a compact view of the same simulation with experiment selection, seeding, contact, and pause. It fits a 480×480 card and narrower frames; **Open lab** carries the selected experiment to the full interface. Rendering and worker evolution suspend when the frame leaves view, and reduced-motion preferences start it paused. The preview image is captured from the app. The root page supplies experimental X Player Card metadata; crawler acceptance and actual in-feed playback are separate checks. Nginx permits framing on `/embed` from X/Twitter and the two personal homepage origins, with relative redirects for alternate spellings.
+
 Production runs in a static Docker container through [Deploy Manager](https://github.com/YesterdaysLemon/deploy-manager). See [deployment/README.md](deployment/README.md) for checks, release identity, and rollout behavior.

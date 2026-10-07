@@ -23,11 +23,12 @@ function setBuffer(geometry, name, values, itemSize = 3) {
 }
 
 export class UniverseView {
-  constructor(container, labels) {
+  constructor(container, labels, { compact = false } = {}) {
+    this.compact = compact; this.active = true;
     this.container = container; this.labels = labels; this.worlds = []; this.state = null; this.angle = .43; this.showField = true; this.showTrails = true; this.trails = new Map(); this.dirty = true;
     this.scene = new THREE.Scene();
     this.renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, powerPreference: 'low-power' });
-    this.renderer.setPixelRatio(Math.min(devicePixelRatio, 1.65)); this.renderer.setClearColor(0x000000, 0);
+    this.renderer.setPixelRatio(Math.min(devicePixelRatio, compact ? 1.25 : 1.65)); this.renderer.setClearColor(0x000000, 0);
     this.renderer.domElement.setAttribute('aria-label', 'Interactive views of two mathematical spaces. Drag to orbit and scroll to zoom.');
     container.prepend(this.renderer.domElement);
     this.camera = new THREE.PerspectiveCamera(39, 1, .1, 180); this.camera.position.set(12, 10, 29);
@@ -40,7 +41,7 @@ export class UniverseView {
     this.bridgeGeometry = new THREE.BufferGeometry();
     this.bridge = new THREE.LineSegments(this.bridgeGeometry, new THREE.LineBasicMaterial({ color: '#c6d8ce', transparent: true, opacity: .5 })); this.scene.add(this.bridge);
     this.observer = new ResizeObserver(() => this.resize()); this.observer.observe(container);
-    this.loop = this.loop.bind(this); requestAnimationFrame(this.loop);
+    this.loop = this.loop.bind(this); this.animationFrame = requestAnimationFrame(this.loop);
   }
   pointMaterial(size, opacity) {
     return new THREE.ShaderMaterial({ transparent: true, depthWrite: false, vertexColors: true,
@@ -51,8 +52,10 @@ export class UniverseView {
   resize() {
     const width = this.container.clientWidth, height = this.container.clientHeight; if (!width || !height) return;
     this.renderer.setSize(width, height); this.camera.aspect = width / height;
-    const mobile = width < 610;
-    if (this.mobile !== mobile) { this.mobile = mobile; this.camera.position.set(...(mobile ? [15, 7, 43] : [12, 10, 29])); this.controls.target.set(0, 0, 0); this.controls.update(); }
+    const mobile = this.compact ? width / height < 1.1 : width < 610;
+    if (this.mobile !== mobile) { this.mobile = mobile; this.home(); }
+    else if (this.compact && this.fittedDistance) { this.camera.position.sub(this.controls.target).multiplyScalar(this.fitDistance() / this.fittedDistance).add(this.controls.target); }
+    this.fittedDistance = this.fitDistance();
     this.camera.updateProjectionMatrix(); this.arrange(); this.dirty = true;
   }
   arrange() {
@@ -173,10 +176,14 @@ export class UniverseView {
   }
   setAngle(value) { this.angle = value; this.refreshGeometry(); this.dirty = true; }
   toggle(layer, value) { if (layer === 'field') this.showField = value; if (layer === 'trails') this.showTrails = value; this.refreshGeometry(); this.dirty = true; }
-  home() { this.camera.position.set(...(this.mobile ? [15, 7, 43] : [12, 10, 29])); this.controls.target.set(0, 0, 0); this.controls.update(); this.dirty = true; }
+  fitDistance() { return Math.max(this.mobile ? 34 : 21, (this.mobile ? 18 : 36) / this.camera.aspect) / (2 * Math.tan(THREE.MathUtils.degToRad(this.camera.fov / 2))); }
+  home() { this.camera.position.set(...(this.mobile ? [15, 7, 43] : [12, 10, 29])); if (this.compact) this.camera.position.normalize().multiplyScalar(this.fitDistance()); this.controls.target.set(0, 0, 0); this.controls.update(); this.dirty = true; }
+  setActive(active) { this.active = active; cancelAnimationFrame(this.animationFrame); this.animationFrame = 0; if (active) { this.dirty = true; this.animationFrame = requestAnimationFrame(this.loop); } }
   loop() {
-    requestAnimationFrame(this.loop);
-    if (document.hidden || !this.dirty) return;
+    this.animationFrame = 0;
+    if (!this.active || document.hidden) return;
+    this.animationFrame = requestAnimationFrame(this.loop);
+    if (!this.dirty) return;
     this.renderer.render(this.scene, this.camera); this.dirty = false;
     for (let i = 0; i < this.worlds.length; i++) {
       const p = this.worlds[i].group.position.clone(); p.y += this.worlds[i].meta.geometry === 'torus' ? 3.1 : 4.7; p.project(this.camera);

@@ -10,10 +10,13 @@ const icon = {
   mark: '<svg viewBox="0 0 40 40" aria-hidden="true"><path d="M5 13h22v22H5zM13 5h22v22H13zM5 13l8-8M27 13l8-8M27 35l8-8M5 35l8-8"/></svg>'
 };
 const root = document.querySelector('#app');
+const embedded = /^\/embed(?:\/|\/index\.html)?$/.test(location.pathname);
+root.classList.toggle('is-embed', embedded);
 root.innerHTML = `
 <header class="masthead">
   <div class="brand">${icon.mark}<div><h1>Between worlds<span>.</span></h1><p>A geometry laboratory</p></div></div>
   <div class="header-actions"><span class="model-badge">Invented laws · real equations</span><button class="quiet" id="model-button">Model & sources <span>↗</span></button></div>
+  <a class="embed-open" id="embed-open" href="/" target="_blank" rel="noopener">Open lab ↗</a>
 </header>
 <main class="workspace">
   <aside class="controls" aria-label="Experiment controls">
@@ -64,6 +67,13 @@ root.innerHTML = `
     <footer class="lab-footer"><span id="model-status">Finite grids · positive metric · test particles</span><button class="quiet" id="notes-button">What am I looking at? ↗</button></footer>
   </section>
 </main>
+<div class="embed-controls" aria-label="Compact experiment controls">
+  <select id="embed-preset" aria-label="Experiment">${Object.entries(PRESETS).map(([key, p]) => `<option value="${key}">${p.title}</option>`).join('')}</select>
+  <button id="embed-play" aria-label="Pause simulation">Pause</button>
+  <button id="embed-seed">＋ Seed A</button>
+  <button id="embed-contact" aria-pressed="true">Close contact</button>
+  <p>A mathematical toy · Drag to orbit</p>
+</div>
 <dialog id="model-dialog"><div class="dialog-top"><span class="eyebrow">The mathematical agreement</span><button class="icon-button" id="close-model" aria-label="Close model explanation">×</button></div><div class="model-copy">
   <h2>Several spaces.<br>One set of contact rules.</h2>
   <p>Each world has its own intrinsic coordinates, a classical scalar field, and a metric used by matter and light. A finite set of oscillator degrees of freedom mediates their contact. All worlds share an external time τ. The gap between the pictures is a diagram, not another physical distance.</p>
@@ -89,7 +99,7 @@ root.innerHTML = `
 const $ = id => document.getElementById(id);
 const worker = new Worker(new URL('./worker.js', import.meta.url), { type: 'module' });
 let state = null, running = false, view, history = [], lastHistoryTime = -1, activePreset = 'contact', pinnedProbe = null;
-try { view = new UniverseView($('stage'), [$('world-a'), $('world-b')]); } catch (error) { showError(`The geometry view could not start: ${error.message}`); }
+try { view = new UniverseView($('stage'), [$('world-a'), $('world-b')], { compact: embedded }); } catch (error) { showError(`The geometry view could not start: ${error.message}`); }
 function send(type, extra = {}) { worker.postMessage({ type, ...extra }); }
 function showError(message) { $('error').hidden = false; $('error').textContent = message; $('loading').hidden = true; }
 function download(name, text, mime = 'application/json') { const url = URL.createObjectURL(new Blob([text], { type: mime })); const link = document.createElement('a'); link.href = url; link.download = name; link.click(); setTimeout(() => URL.revokeObjectURL(url), 1000); }
@@ -99,6 +109,11 @@ function updateUI(data) {
   if (data.reset) { history = []; lastHistoryTime = -1; pinnedProbe = null; activePreset = data.preset; $('error').hidden = true; }
   const preset = PRESETS[data.preset], index = Object.keys(PRESETS).indexOf(data.preset) + 1;
   setValue('mobile-preset', data.preset);
+  setValue('embed-preset', data.preset);
+  $('embed-open').href = `/?experiment=${encodeURIComponent(data.preset)}`;
+  $('embed-play').textContent = running ? 'Pause' : 'Run';
+  $('embed-play').setAttribute('aria-label', running ? 'Pause simulation' : 'Run simulation');
+  $('embed-play').setAttribute('aria-pressed', String(!running));
   $('experiment-index').textContent = `Experiment 0${index}`; $('experiment-title').textContent = preset.title; $('experiment-question').textContent = preset.question;
   for (const b of document.querySelectorAll('[data-preset]')) { const selected = b.dataset.preset === data.preset; b.classList.toggle('active', selected); b.setAttribute('aria-pressed', selected); }
   $('time').textContent = state.time.toFixed(2); $('run-state').innerHTML = `<i class="${running ? '' : 'paused'}"></i>${running ? 'Evolving' : 'Paused'}`;
@@ -108,6 +123,7 @@ function updateUI(data) {
   $('coupling-value').textContent = o.coupling.toFixed(2); $('bias-value').textContent = o.biasB.toFixed(3); $('depth-value').textContent = o.minimumScale.toFixed(2); $('radius-value').textContent = o.seedRadius.toFixed(1); $('horizon-value').textContent = o.horizon.toFixed(2); $('threshold-value').textContent = o.threshold.toFixed(2);
   $('compact').checked = o.compact; $('matter-channel').checked = o.matterChannel;
   $('contact').setAttribute('aria-pressed', o.open); $('contact').classList.toggle('closed', !o.open); $('contact-label').textContent = o.open ? 'Contact is open' : 'Worlds are separated'; $('contact-action').textContent = o.open ? 'Close ↗' : 'Connect ↗';
+  $('embed-contact').setAttribute('aria-pressed', String(o.open)); $('embed-contact').textContent = o.open ? 'Close contact' : 'Connect worlds';
   const b = state.worlds[1]; $('dimension-b').textContent = `${b.dim} spatial + time${b.geometry === 'torus' ? ' / torus' : ''}`; $('fourth-control').hidden = b.dim !== 4;
   for (const option of $('holes').options) option.disabled = b.dim === 2 && ['b', 'both'].includes(option.value);
   $('seed-hole').disabled = state.worlds[0].horizon === 0;
@@ -124,10 +140,20 @@ function updateUI(data) {
 }
 worker.onmessage = ({ data }) => { if (data.type === 'state') updateUI(data); if (data.type === 'error') showError(data.message); if (data.type === 'export') download(`between-worlds-${activePreset}-${Math.floor(state.time)}.json`, JSON.stringify(data.data, null, 2)); };
 worker.onerror = e => showError(e.message || 'The simulation worker stopped.');
-const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches; send('init', { running: !reduced, preset: new URLSearchParams(location.search).get('experiment') });
-document.addEventListener('visibilitychange', () => send('visible', { value: !document.hidden }));
+const reduced = matchMedia('(prefers-reduced-motion: reduce)'); send('init', { running: !reduced.matches, preset: new URLSearchParams(location.search).get('experiment') });
+let stageVisible = true;
+function syncActivity() { const active = !!view && stageVisible && !document.hidden; send('visible', { value: active }); view?.setActive(active); }
+const stageObserver = new IntersectionObserver(entries => { stageVisible = entries[0].isIntersecting; syncActivity(); });
+stageObserver.observe($('stage'));
+document.addEventListener('visibilitychange', syncActivity); syncActivity();
+reduced.addEventListener('change', () => { if (reduced.matches) send('play', { value: false }); });
+window.betweenWorlds = { getStatus: () => ({ embedded, running, active: !!view && stageVisible && !document.hidden, preset: activePreset, time: state?.time, pixelRatio: view?.renderer.getPixelRatio() }) };
 for (const button of document.querySelectorAll('[data-preset]')) button.addEventListener('click', () => send('preset', { name: button.dataset.preset }));
 $('mobile-preset').onchange = e => send('preset', { name: e.target.value });
+$('embed-preset').onchange = e => send('preset', { name: e.target.value });
+$('embed-play').onclick = () => send('play', { value: !running });
+$('embed-seed').onclick = () => send('seed', { world: 0 });
+$('embed-contact').onclick = () => state && send('options', { options: { open: !state.options.open } });
 $('play').onclick = () => send('play', { value: !running }); $('step').onclick = () => send('step'); $('reset').onclick = () => send('reset'); $('export').onclick = () => send('export');
 $('contact').onclick = () => state && send('options', { options: { open: !state.options.open } }); $('geometry').onchange = e => send('geometry', { value: e.target.value });
 for (const [id, key] of [['coupling', 'coupling'], ['bias', 'biasB'], ['depth', 'minimumScale'], ['radius', 'seedRadius'], ['horizon', 'horizon'], ['threshold', 'threshold']]) $(id).addEventListener('input', e => send('options', { options: { [key]: Number(e.target.value) } }));
